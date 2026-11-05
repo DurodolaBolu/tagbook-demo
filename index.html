@@ -73,7 +73,7 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-to
 nav.tabs .inner{display:flex;gap:8px;max-width:440px;width:100%}
 nav.tabs button{flex:1;font:inherit;font-size:15px;border:0;background:transparent;color:var(--muted);padding:9px;border-radius:10px;cursor:pointer}
 nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft);font-weight:600}
-nav.tabs button.new{background:var(--accent);color:var(--accent-ink);font-weight:600}
+nav.tabs button.new{flex:1.5;white-space:nowrap;background:var(--accent);color:var(--accent-ink);font-weight:600}
 h2{font-size:20px;margin:0 0 12px;text-wrap:balance}
 label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-weight:600;letter-spacing:.02em}
 .row{display:flex;gap:8px;align-items:center}.row>*{min-width:0;flex:1}
@@ -124,8 +124,11 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 .wa-label{font-size:13px;color:var(--muted);margin:16px 0 0;font-weight:600}
 .wa{background:var(--wa);color:var(--wa-ink);border-radius:12px 12px 12px 4px;padding:12px 14px;margin-top:6px;font-size:16px;white-space:pre-wrap;line-height:1.5}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:16px;z-index:20;max-width:90vw}
-.price-row{display:grid;grid-template-columns:1fr 84px 84px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px;font-variant-numeric:tabular-nums}
+.price-row{display:grid;grid-template-columns:minmax(0,1fr) 84px 84px 34px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px;font-variant-numeric:tabular-nums}
 .price-row:last-child{border-bottom:0}
+.price-row input{padding:7px 8px;font-size:16px;text-align:right}
+.price-row input[data-pn]{text-align:left}
+.price-row .x{height:34px;min-width:34px;border-radius:8px;border:1px solid var(--field);background:var(--card);color:var(--owes);font:inherit;font-size:16px;cursor:pointer;padding:0 6px}
 .price-row.head{font-size:13px;color:var(--muted);font-weight:600}
 .foot{text-align:center;font-size:13px;color:var(--muted);margin-top:24px}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
@@ -149,10 +152,11 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 <div id="sheet" class="sheet" hidden></div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="/jspdf.umd.min.js"></script>
 <script>
 const BRANCHES=["Main branch","Awule point","Oke-Ijebu point"];
 const SERVICES={wash:"Wash and iron",dry:"Dry clean",iron:"Iron only"};
-const PRICES=[
+let PRICES=[
   {id:"shirt",name:"Shirt",wash:800,dry:1200},
   {id:"trouser",name:"Trouser",wash:800,dry:1200},
   {id:"roundneck",name:"Round neck",wash:500,dry:800},
@@ -198,10 +202,12 @@ function mk(no,phone,branch,lines,o){
   const ord={no,phone,branch,items:lines.map(([id,svc,qty,label])=>({id,svc,qty,label})),express:!!o.express,pickup:!!o.pickup,
     delivery:o.delivery||0,discount:0,custom:o.custom||{},status:o.status,billed:!!o.billed,paid:o.paid||0,
     dropped:day(o.dropped),checked:{},checking:false,notified:o.status!=="new",again:{}};
+  if(o.billed)lockPrices(ord);
   if(o.paidAll)ord.paid=calc(ord).total;
   return ord;
 }
-function unitPrice(o,it,i){const p=PRICES.find(x=>x.id===it.id);if(p.custom)return +o.custom[i]||0;return it.svc==="iron"?Math.round(p.wash*0.6/50)*50:p[it.svc];}
+function lockPrices(o){o.unit=o.items.map((it,i)=>PRICES.find(x=>x.id===it.id).custom?null:unitPrice({...o,unit:null},it,i));}
+function unitPrice(o,it,i){if(o.unit&&o.unit[i]!=null)return o.unit[i];const p=PRICES.find(x=>x.id===it.id);if(p.custom)return +o.custom[i]||0;return it.svc==="iron"?Math.round(p.wash*0.6/50)*50:p[it.svc];}
 function expressFor(sub){return settings.expressType==="percent"?Math.round(sub*settings.expressValue/100/50)*50:settings.expressValue;}
 function calc(o){
   const sub=o.items.reduce((s,it,i)=>s+unitPrice(o,it,i)*it.qty,0);
@@ -216,9 +222,9 @@ const expressLabel=()=>settings.expressType==="percent"?`+${settings.expressValu
 
 /* demo only: keep changes on this device so closing the page doesn't reset them */
 const SAVE_KEY="tagbook-demo-v2";
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({settings,customers,orders,nextNo}));}catch(_){}}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({settings,customers,orders,nextNo,prices:PRICES}));}catch(_){}}
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
-  if(s&&s.orders&&s.customers){Object.assign(settings,s.settings||{});customers=s.customers;orders=s.orders;nextNo=s.nextNo||nextNo;}}catch(_){}
+  if(s&&s.orders&&s.customers){Object.assign(settings,s.settings||{});customers=s.customers;orders=s.orders;nextNo=s.nextNo||nextNo;if(Array.isArray(s.prices))PRICES=s.prices;orders.forEach(o=>{if(o.billed&&!o.unit)lockPrices(o);});}}catch(_){}
 let role="sec",tab="orders",filter="all",query="",openNo=null;
 const $=s=>document.querySelector(s);
 const view=$("#view");
@@ -362,7 +368,7 @@ function renderNew(){
     <label>Service</label>
     <div class="chips" style="margin:0">${Object.entries(SERVICES).map(([s,l])=>`<button class="chip" data-svc="${s}" aria-pressed="${d.svc===s}">${l}</button>`).join("")}</div>
     <label>Tap to add clothes</label>
-    <div class="picker">${PRICES.map(p=>`<button data-add="${p.id}">${p.name}${p.custom?"<small>Wedding gown, curtain...</small>":""}</button>`).join("")}</div>
+    <div class="picker">${PRICES.filter(p=>!p.hidden).map(p=>`<button data-add="${p.id}">${p.name}${p.custom?"<small>Wedding gown, curtain...</small>":""}</button>`).join("")}</div>
     ${d.askSpecial?`<div class="check" style="margin-top:8px"><label for="sp" style="margin-top:0">What is the special item?</label>
       <input id="sp" placeholder="e.g. Wedding gown" value="${esc(d.specialName)}" autocomplete="off">
       <div class="row"><button class="btn btn-ghost" id="spc">Cancel</button><button class="btn btn-primary" id="spa" ${d.specialName.trim()?"":"disabled"}>Add item</button></div></div>`:""}
@@ -456,6 +462,7 @@ function openOrder(no){
     if(o.status==="new")html+=waBlock(o,"list",true);
     else html+=sentLine(o,"list","List of clothes sent.");
     // 2. clothes ready, with bill
+    if(o.billed&&["ready","told","picked"].includes(o.status))html+=`<button class="btn btn-ghost" id="pdf">Share invoice PDF</button><p class="hint">Opens your phone's share menu. Pick WhatsApp, then the customer.</p><div id="pdfprev"></div>`;
     if(o.status==="ready")html+=o.billed?waBlock(o,"ready",true):`<p class="bad">Clothes are packed and ready. Save the bill below first so the message can include it.</p>`;
     if(o.status==="told"||(o.status==="picked"&&o.billed))html+=sentLine(o,"ready","Ready message and invoice sent.");
     // 3. bill
@@ -528,13 +535,80 @@ function openOrder(no){
   const bill=$("#bill");if(bill)bill.onclick=()=>{
     const miss=o.items.find((it,i)=>PRICES.find(p=>p.id===it.id).custom&&!o.custom[i]);
     if(miss){toast(`Set a price for ${pname(miss)} first`);return;}
-    o.billed=true;toast("Bill saved");again();};
+    lockPrices(o);o.billed=true;toast("Bill saved");again();};
   const pp=$("#pp");if(pp)pp.onclick=()=>{const v=num($("#pay").value);if(!v){toast("Type the amount received");return;}
     o.paid=o.billed?Math.min(calc(o).total,o.paid+v):o.paid+v;toast(o.billed&&owed(o)?`Recorded. ${naira(owed(o))} still to pay.`:o.billed?"Fully paid":`Recorded ${naira(o.paid)} paid early`);again();};
+  const pdfb=$("#pdf");if(pdfb)pdfb.onclick=()=>shareInvoice(o,pdfb);
   const w=$("#washed");if(w)w.onclick=()=>{o.checking=true;again();};
   sh.querySelectorAll("[data-ck]").forEach(b=>b.onchange=()=>{o.checked[b.dataset.ck]=b.checked;again();});
   const rd=$("#rd");if(rd)rd.onclick=()=>{o.status="ready";toast(own?"Marked ready. Send the ready message.":"Marked ready. The owner has been told.");again();};
   const pk=$("#pick");if(pk)pk.onclick=()=>{o.status="picked";toast(owed(o)?"Picked up. Not fully paid yet.":"Picked up");again();};
+}
+
+/* ---------- Invoice PDF ---------- */
+async function invoiceCanvas(o){
+  const c=cust(o.phone),k=calc(o),W=1240,H=1754,cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const x=cv.getContext("2d"),F='"IBM Plex Sans","Segoe UI",sans-serif',G="#0F7B5F",INK="#03191E",MU="#55605F",LN="#DFE4E1";
+  try{await document.fonts.load('700 30px "IBM Plex Sans"');await document.fonts.load('400 30px "IBM Plex Sans"');}catch(_){}
+  const t=(s,px,y,{w=400,c=INK,a="left",px0=90}={})=>{x.font=`${w} ${px}px ${F}`;x.fillStyle=c;x.textAlign=a;x.fillText(s,a==="right"?W-90:px0,y);};
+  const fit=(s,max,px,w=400)=>{x.font=`${w} ${px}px ${F}`;if(x.measureText(s).width<=max)return s;while(s.length&&x.measureText(s+"…").width>max)s=s.slice(0,-1);return s+"…";};
+  x.fillStyle="#FFFFFF";x.fillRect(0,0,W,H);
+  x.fillStyle=G;x.fillRect(0,0,W,14);
+  t(fit(shop(),700,52,700),52,140,{w:700});
+  t(BRANCHES[o.branch],26,184,{c:MU});
+  t("INVOICE",44,140,{w:700,c:G,a:"right"});
+  t(`INV-${o.no}`,28,184,{w:600,a:"right"});
+  t(day(0),26,222,{c:MU,a:"right"});
+  x.fillStyle=LN;x.fillRect(90,262,W-180,2);
+  t("BILL TO",22,318,{w:700,c:MU});
+  t(fit(c.name,600,34,700),34,364,{w:700});
+  t(`Mark ${c.mark}  ·  ${fmtPhone(c.phone)}`,26,404,{c:MU});
+  t("ORDER",22,318,{w:700,c:MU,a:"right"});
+  t(`#${o.no}  ·  ${k.count} items`,28,364,{w:600,a:"right"});
+  t(`Dropped ${o.dropped}`,26,404,{c:MU,a:"right"});
+  let y=490;x.fillStyle="#F3F5F3";x.fillRect(90,y-44,W-180,64);
+  t("ITEM",22,y,{w:700,c:MU,px0:110});t("SERVICE",22,y,{w:700,c:MU,px0:560});t("QTY",22,y,{w:700,c:MU,px0:820});t("AMOUNT",22,y,{w:700,c:MU,a:"right"});
+  y+=70;
+  o.items.forEach((it,i)=>{const amt=unitPrice(o,it,i)*it.qty;
+    t(fit(pname(it),430,28,600),28,y,{w:600,px0:110});t(SERVICES[it.svc],26,y,{c:MU,px0:560});t(String(it.qty),28,y,{px0:830});t(naira(amt),28,y-0,{a:"right",w:600});
+    x.fillStyle=LN;x.fillRect(90,y+24,W-180,1);y+=64;});
+  const line=(l,v,opt={})=>{t(l,opt.big?32:26,y,{w:opt.big?700:400,c:opt.c||INK,px0:700});t(v,opt.big?34:26,y,{w:opt.big?700:600,c:opt.c||INK,a:"right"});y+=opt.big?56:46;};
+  y+=20;line("Subtotal",naira(k.sub));
+  if(k.exp)line("Express delivery",naira(k.exp));
+  if(o.delivery)line("Pickup / delivery",naira(o.delivery));
+  if(o.discount)line("Discount","-"+naira(o.discount));
+  x.fillStyle=INK;x.fillRect(700,y-30,W-790,2);y+=14;
+  line("Total",naira(k.total),{big:true});
+  if(o.paid)line("Paid",naira(o.paid));
+  line(owed(o)?"Balance to pay":"Fully paid",naira(owed(o)),{big:true,c:owed(o)?"#B42318":G});
+  y+=30;
+  if(owed(o)&&hasBank()){x.fillStyle="#DDF3EA";x.beginPath();x.roundRect?x.roundRect(90,y,W-180,220,18):x.rect(90,y,W-180,220);x.fill();
+    t("PAY BY TRANSFER",22,y+52,{w:700,c:"#0B4F3D",px0:130});
+    t(settings.bankName.trim(),30,y+100,{w:600,c:"#0B4F3D",px0:130});
+    t(settings.acctNo.replace(/(\d{3})(\d{3})(\d{4})/,"$1 $2 $3"),44,y+156,{w:700,c:"#0B4F3D",px0:130});
+    t(fit(settings.acctName.trim(),W-300,28,600),28,y+198,{w:600,c:"#0B4F3D",px0:130});
+    t("Send your receipt on WhatsApp",22,y+52,{c:"#0B4F3D",a:"right"});y+=260;}
+  t("Thank you for your patronage.",26,H-150,{c:MU});
+  x.fillStyle=LN;x.fillRect(90,H-118,W-180,1);
+  t("Made with Tagbook by Ordiventa",20,H-78,{c:MU});
+  return cv;
+}
+async function shareInvoice(o,btn){
+  btn.disabled=true;const old=btn.textContent;btn.textContent="Making invoice…";
+  try{
+    const cv=await invoiceCanvas(o);const img=cv.toDataURL("image/jpeg",0.92);
+    const prev=$("#pdfprev");if(prev)prev.innerHTML=`<p class="wa-label">Invoice preview</p><img src="${img}" alt="Invoice INV-${o.no}" style="width:100%;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:#fff">`;
+    if(!window.jspdf){toast("PDF tool did not load. Check your internet.");return;}
+    const pdf=new window.jspdf.jsPDF({unit:"pt",format:"a4"});pdf.addImage(img,"JPEG",0,0,595.28,841.89);
+    const name=`INV-${o.no}-${cust(o.phone).name.split(" ")[0]}.pdf`;
+    const file=new File([pdf.output("blob")],name,{type:"application/pdf"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:`Invoice INV-${o.no}`});toast("Invoice shared");}catch(e){if(e&&e.name!=="AbortError")toast("Could not open the share menu");}
+    }else{
+      const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
+      toast("Invoice downloaded. Attach it in WhatsApp.");
+    }
+  }finally{btn.disabled=false;btn.textContent=old;}
 }
 
 /* ---------- Settings (owner) ---------- */
@@ -569,9 +643,16 @@ function renderSettings(){
       <p class="hint" id="evx">${exampleExpress()}</p>
     </div>
     <h2 style="margin-top:18px">Price list</h2>
+    <p class="hint" style="margin-top:-6px">Tap a price to change it. New prices apply to new bills; bills already saved keep their prices.</p>
     <div class="lines" style="padding:4px 14px">
-      <div class="price-row head"><span>Item</span><span>Wash & iron</span><span>Dry clean</span></div>
-      ${PRICES.filter(p=>!p.custom).map(p=>`<div class="price-row"><span>${p.name}</span><span>${naira(p.wash)}</span><span>${naira(p.dry)}</span></div>`).join("")}
+      <div class="price-row head"><span>Item</span><span>Wash & iron (₦)</span><span>Dry clean (₦)</span><span></span></div>
+      ${PRICES.filter(p=>!p.custom&&!p.hidden).map(p=>`<div class="price-row"><input data-pn="${p.id}" value="${esc(p.name)}" aria-label="Item name" autocomplete="off"><input data-pw="${p.id}" ${moneyAttrs} value="${p.wash}" aria-label="${esc(p.name)} wash and iron price"><input data-pd="${p.id}" ${moneyAttrs} value="${p.dry}" aria-label="${esc(p.name)} dry clean price"><button class="x" data-prm="${p.id}" aria-label="Remove ${esc(p.name)}">×</button></div>`).join("")}
+    </div>
+    <div class="check">
+      <p><b>Add an item</b></p>
+      <label for="ni" style="margin-top:0">Item name</label><input id="ni" placeholder="e.g. Curtain (per panel)" autocomplete="off">
+      <div class="row"><div><label for="nw">Wash & iron (₦)</label><input id="nw" ${moneyAttrs} placeholder="0"></div><div><label for="nd">Dry clean (₦)</label><input id="nd" ${moneyAttrs} placeholder="0"></div></div>
+      <button class="btn btn-primary" id="nadd">Add to price list</button>
     </div>
     <p class="hint">Iron only is about 60% of wash and iron. Special items, like a wedding gown, get their price when you make the bill.</p>
     <button class="btn btn-ghost" id="rst" style="margin-top:20px">Reset demo to sample data</button>
@@ -584,6 +665,14 @@ function renderSettings(){
   $("#rst").onclick=()=>{if(!$("#rst").dataset.sure){$("#rst").dataset.sure="1";$("#rst").textContent="Tap again to reset";return;}try{localStorage.removeItem(SAVE_KEY);}catch(_){}location.hash="orders";location.reload();};
   moneyInput($("#an"),()=>{const el=$("#an");if(el.value.length>10)el.value=el.value.slice(0,10);settings.acctNo=el.value;save();$("#anx").textContent=settings.acctNo.length===10?"":"Account number must be 10 digits.";});
   view.querySelectorAll("[data-et]").forEach(b=>b.onclick=()=>{settings.expressType=b.dataset.et;settings.expressValue=b.dataset.et==="percent"?50:1000;renderSettings();});
+  view.querySelectorAll("[data-pn]").forEach(i=>i.oninput=()=>{const p=PRICES.find(x=>x.id===i.dataset.pn);p.name=i.value.slice(0,40)||p.name;save();});
+  view.querySelectorAll("[data-pw]").forEach(i=>moneyInput(i,v=>{PRICES.find(x=>x.id===i.dataset.pw).wash=v;save();}));
+  view.querySelectorAll("[data-pd]").forEach(i=>moneyInput(i,v=>{PRICES.find(x=>x.id===i.dataset.pd).dry=v;save();}));
+  view.querySelectorAll("[data-prm]").forEach(b=>b.onclick=()=>{if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Sure?";b.style.width="auto";return;}PRICES.find(x=>x.id===b.dataset.prm).hidden=true;save();toast("Item removed from the price list");renderSettings();});
+  moneyInput($("#nw"),()=>{});moneyInput($("#nd"),()=>{});
+  $("#nadd").onclick=()=>{const n=$("#ni").value.trim();if(!n){toast("Type the item name first");$("#ni").focus();return;}
+    const w=num($("#nw").value),dr=num($("#nd").value);if(!w&&!dr){toast("Set at least one price");return;}
+    const id="i"+Date.now().toString(36);const sp=PRICES.findIndex(p=>p.custom);PRICES.splice(sp<0?PRICES.length:sp,0,{id,name:n.slice(0,40),wash:w,dry:dr});save();toast(`${n} added`);renderSettings();};
   moneyInput($("#ev"),v=>{settings.expressValue=settings.expressType==="percent"?Math.min(v,300):v;$("#evx").textContent=exampleExpress();save();});
 }
 function exampleExpress(){return `Example: a ${naira(5000)} order marked express delivery costs ${naira(5000+expressFor(5000))}.`;}
