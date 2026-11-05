@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0F7B5F">
+<title>Tagbook Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone-width app column, bottom tab bar, order detail slides over as a sheet */
+:root{
+  --bg:#F3F5F3; --card:#FFFFFF; --fg:#03191E; --muted:#5B6468; --line:#E1E5E2;
+  --accent:#0F7B5F; --accent-ink:#FFFFFF; --accent-soft:#DDF3EA; --accent-deep:#0B4F3D;
+  --warn:#B45309; --warn-soft:#FEF3C7; --wa:#E7FFDB; --wa-ink:#111B21;
+  --font:"Urbanist",system-ui,-apple-system,"Segoe UI",sans-serif; color-scheme:light;
+}
+/* Light by default whatever the phone is set to; dark only when chosen in Settings */
+:root[data-tb="dark"]{
+  --bg:#0C1513; --card:#15211E; --fg:#E8EEEC; --muted:#9AA7A3; --line:#26332F;
+  --accent:#2BB38C; --accent-ink:#04201A; --accent-soft:#16372E; --accent-deep:#8FE0C6;
+  --warn:#F5B454; --warn-soft:#3A2A10; --wa:#173A2A; --wa-ink:#E3F5E8; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45}
+.app{max-width:440px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 100px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:6px 10px}
+.brand{font-weight:700;font-size:22px;color:var(--accent);letter-spacing:-.01em}
+.brand small{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.demo-tag{font-size:11px;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.role{display:flex;background:var(--card);border-radius:12px;padding:4px;gap:4px;margin-bottom:14px}
+.role button{flex:1;border:0;background:transparent;font:inherit;font-size:14px;padding:8px;border-radius:9px;color:var(--muted);cursor:pointer}
+.role button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:600}
+.role-note{font-size:12px;color:var(--muted);margin:-8px 0 14px}
+select,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+select:focus,input:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.alert{background:var(--accent-soft);color:var(--accent-deep);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.alert button{border:0;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border-radius:12px;padding:10px 12px;border:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.hot b{color:var(--warn)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.search{margin-bottom:12px}
+.list{display:flex;flex-direction:column;gap:8px}
+.order{background:var(--card);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;cursor:pointer;border:1px solid transparent;text-align:left;font:inherit;color:inherit;width:100%}
+.order:hover{border-color:var(--line)}
+.mark{font-weight:700;font-size:14px;background:var(--accent-soft);color:var(--accent-deep);border-radius:8px;padding:8px 0;width:52px;text-align:center;letter-spacing:.03em}
+.who{min-width:0}
+.who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{font-size:12px;color:var(--muted)}
+.right{text-align:right;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.p-new{background:var(--warn-soft);color:var(--warn)}
+.p-billed{background:var(--line);color:var(--muted)}
+.p-ready{background:var(--accent-soft);color:var(--accent-deep)}
+.p-told{background:var(--accent);color:var(--accent-ink)}
+.p-collected{color:var(--muted);border:1px solid var(--line)}
+.p-owed{background:var(--warn-soft);color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:32px 0}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:5}
+nav.tabs .inner{display:flex;gap:8px;max-width:440px;width:100%}
+nav.tabs button{flex:1;font:inherit;font-size:13px;border:0;background:transparent;color:var(--muted);padding:9px;border-radius:10px;cursor:pointer}
+nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft);font-weight:600}
+nav.tabs button.new{background:var(--accent);color:var(--accent-ink);font-weight:600}
+h2{font-size:18px;margin:0 0 12px;text-wrap:balance}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px;font-weight:600;letter-spacing:.02em}
+.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0;flex:1}
+.hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+.found{background:var(--accent-soft);color:var(--accent-deep);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px}
+.bad{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px}
+.picker{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
+.picker button{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:13px;color:var(--fg);cursor:pointer}
+.picker button small{display:block;color:var(--muted);font-variant-numeric:tabular-nums}
+.items{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:var(--card);border-radius:10px;padding:8px 10px;font-size:14px}
+.qty{display:flex;align-items:center;gap:4px}
+.qty button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;font:inherit}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px;cursor:pointer}
+.toggle input{width:20px;height:20px}
+.totals,.lines,.check{background:var(--card);border-radius:12px;padding:4px 14px;margin-top:12px;font-variant-numeric:tabular-nums}
+.lines>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.lines>div:last-child{border-bottom:0}
+.lines input{width:96px;padding:6px 8px;text-align:right}
+.check{padding:12px 14px}
+.check p{margin:0 0 6px;font-size:14px}
+.ck{display:flex;gap:10px;align-items:center;font-size:14px;margin:8px 0;cursor:pointer}
+.ck input{width:20px;height:20px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-top:10px;text-align:center;text-decoration:none}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.sheet{position:fixed;inset:0;background:var(--bg);overflow-y:auto;z-index:10;padding-top:env(safe-area-inset-top,0px)}
+.sheet .app{padding-bottom:40px}
+.back{border:0;background:transparent;color:var(--accent);font:inherit;font-weight:600;padding:8px 0;cursor:pointer}
+.topbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-block:6px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.shopname{font-size:13px;font-weight:600;margin:0 0 10px;color:var(--fg)}
+.sent{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--accent-soft);color:var(--accent-deep);border-radius:12px;padding:10px 12px;margin-top:14px;font-size:14px}
+.sent button{border:0;background:transparent;color:var(--accent-deep);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+.dhead{display:flex;gap:12px;align-items:center;margin:8px 0 6px}
+.dhead .mark{width:64px;font-size:18px;padding:12px 0}
+.dhead b{font-size:18px;display:block}
+.dhead span{color:var(--muted);font-size:13px}
+.steps{display:flex;gap:4px;margin:12px 0 4px}
+.steps div{flex:1;font-size:11px;color:var(--muted);text-align:center}
+.steps div i{display:block;height:4px;border-radius:2px;background:var(--line);margin-bottom:4px}
+.steps div.on{color:var(--accent-deep);font-weight:600}
+.steps div.on i{background:var(--accent)}
+.wa-label{font-size:12px;color:var(--muted);margin:16px 0 0;font-weight:600}
+.wa{background:var(--wa);color:var(--wa-ink);border-radius:12px 12px 12px 4px;padding:12px 14px;margin-top:6px;font-size:14px;white-space:pre-wrap;line-height:1.5}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:90vw}
+.price-row{display:grid;grid-template-columns:1fr 84px 84px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
+.price-row:last-child{border-bottom:0}
+.price-row.head{font-size:12px;color:var(--muted);font-weight:600}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+</head><body>
+
+<div class="app">
+  <header>
+    <div class="brand">Tagbook<small>Every cloth, accounted for.</small></div>
+    <span class="demo-tag">Demo</span>
+  </header>
+  <p class="shopname" id="shopname"></p>
+  <div class="role" role="group" aria-label="Who is using the app">
+    <button data-role="sec" aria-pressed="true">Secretary</button>
+    <button data-role="own" aria-pressed="false">Owner</button>
+  </div>
+  <p class="role-note" id="rolenote"></p>
+  <section id="view"></section>
+</div>
+
+<nav class="tabs"><div class="inner" id="tabs"></div></nav>
+<div id="sheet" class="sheet" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const BRANCHES=["Main branch","Awule point","Oke-Ijebu point"];
+const SERVICES={wash:"Wash and iron",dry:"Dry clean",iron:"Iron only"};
+const PRICES=[
+  {id:"shirt",name:"Shirt",wash:800,dry:1200},
+  {id:"trouser",name:"Trouser",wash:800,dry:1200},
+  {id:"roundneck",name:"Round neck",wash:500,dry:800},
+  {id:"native",name:"Native (2 piece)",wash:1500,dry:2500},
+  {id:"agbada",name:"Agbada (3 piece)",wash:3000,dry:4500},
+  {id:"hoodie",name:"Hoodie / cardigan",wash:1000,dry:1500},
+  {id:"singlet",name:"Singlet / underwear",wash:300,dry:300},
+  {id:"suit",name:"Suit (2 piece)",wash:2500,dry:3500},
+  {id:"duvet",name:"Duvet",wash:4000,dry:5000},
+  {id:"special",name:"Special item",custom:true},
+];
+const settings={shopName:"Saheed Dry Cleaners",expressType:"percent",expressValue:50,bankName:"GTBank",acctNo:"0123456789",acctName:"Saheed Dry Cleaners",theme:"light"};
+const hasBank=()=>settings.bankName.trim()&&settings.acctNo.length===10&&settings.acctName.trim();
+const payTo=()=>hasBank()?`\n\nPay by transfer to:\n${settings.bankName.trim()}\n${settings.acctNo}\n${settings.acctName.trim()}\nPlease send your payment receipt here.`:"";
+const STEPS=[["new","Logged"],["listed","List sent"],["ready","Ready"],["told","Told"],["picked","Picked up"]];
+const naira=n=>"₦"+Math.round(n).toLocaleString("en-NG");
+const today=new Date();
+const day=d=>{const x=new Date(today);x.setDate(x.getDate()+d);return x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});};
+const fmtPhone=p=>p.replace(/(\d{4})(\d{3})(\d{4})/,"$1 $2 $3");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const digits=v=>String(v).replace(/\D/g,"");
+const num=v=>+digits(v)||0;
+function moneyInput(el,fn){if(!el)return;el.addEventListener("input",()=>{const c=digits(el.value);if(el.value!==c)el.value=c;fn(num(c));});}
+const moneyAttrs='type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"';
+const shop=()=>settings.shopName.trim()||"Your dry cleaner";
+
+let customers=[
+  {phone:"08034127790",name:"Bolu Adeyemi",mark:"BO"},
+  {phone:"08061234567",name:"Bola Ogun",mark:"BL"},
+  {phone:"07039876543",name:"Chidi Okafor",mark:"CH"},
+  {phone:"08129990011",name:"Funmi Alade",mark:"FA"},
+  {phone:"09055512345",name:"Kunle Bello",mark:"KB"},
+];
+let nextNo=146;
+let orders=[
+  mk(141,"08129990011",1,[["native","wash",2],["duvet","wash",1]],{status:"picked",billed:true,paidAll:true,dropped:-6}),
+  mk(142,"09055512345",0,[["hoodie","wash",2],["singlet","wash",5],["roundneck","wash",4]],{status:"picked",billed:true,dropped:-5}),
+  mk(143,"08034127790",0,[["agbada","dry",1],["shirt","wash",3],["trouser","wash",2]],{status:"ready",billed:true,paid:3000,dropped:-3}),
+  mk(144,"07039876543",2,[["shirt","dry",2],["special","dry",1,"Wedding gown"]],{status:"listed",billed:true,express:true,delivery:1500,custom:{1:6000},dropped:-1}),
+  mk(145,"08061234567",0,[["shirt","wash",4],["roundneck","wash",3]],{status:"new",pickup:true,dropped:0}),
+];
+function mk(no,phone,branch,lines,o){
+  const ord={no,phone,branch,items:lines.map(([id,svc,qty,label])=>({id,svc,qty,label})),express:!!o.express,pickup:!!o.pickup,
+    delivery:o.delivery||0,discount:0,custom:o.custom||{},status:o.status,billed:!!o.billed,paid:o.paid||0,
+    dropped:day(o.dropped),checked:{},checking:false,notified:o.status!=="new",again:{}};
+  if(o.paidAll)ord.paid=calc(ord).total;
+  return ord;
+}
+function unitPrice(o,it,i){const p=PRICES.find(x=>x.id===it.id);if(p.custom)return +o.custom[i]||0;return it.svc==="iron"?Math.round(p.wash*0.6/50)*50:p[it.svc];}
+function expressFor(sub){return settings.expressType==="percent"?Math.round(sub*settings.expressValue/100/50)*50:settings.expressValue;}
+function calc(o){
+  const sub=o.items.reduce((s,it,i)=>s+unitPrice(o,it,i)*it.qty,0);
+  const exp=o.express?expressFor(sub):0;
+  const total=Math.max(0,sub+exp+(+o.delivery||0)-(+o.discount||0));
+  return {sub,exp,total,count:o.items.reduce((s,it)=>s+it.qty,0)};
+}
+const cust=p=>customers.find(c=>c.phone===p);
+const owed=o=>o.billed?Math.max(0,calc(o).total-o.paid):0;
+const pname=it=>it.label||PRICES.find(x=>x.id===it.id).name;
+const expressLabel=()=>settings.expressType==="percent"?`+${settings.expressValue}%`:`+${naira(settings.expressValue)}`;
+
+/* demo only: keep changes on this device so closing the page doesn't reset them */
+const SAVE_KEY="tagbook-demo-v1";
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({settings,customers,orders,nextNo}));}catch(_){}}
+try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+  if(s&&s.orders&&s.customers){Object.assign(settings,s.settings||{});customers=s.customers;orders=s.orders;nextNo=s.nextNo||nextNo;}}catch(_){}
+let role="sec",tab="orders",filter="all",query="",openNo=null;
+const $=s=>document.querySelector(s);
+const view=$("#view");
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2600);}
+
+/* ---------- Navigation: each screen has its own address, so the phone's back button works too ---------- */
+const TAB_HASH={orders:"orders",new:"log",prices:"shop"};
+function go(h){ if(location.hash.slice(1)===h)route(); else location.hash=h; }
+function route(){
+  const h=location.hash.slice(1);
+  const m=h.match(/^order-(\d+)$/);
+  if(m&&orders.some(o=>o.no===+m[1])){tab="orders";openNo=+m[1];}
+  else{openNo=null;tab=h==="log"?"new":(h==="shop"&&role==="own")?"prices":"orders";}
+  render();
+}
+window.addEventListener("hashchange",route);
+document.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{role=b.dataset.role;filter="all";go("orders");});
+const backBtn=label=>`<div class="topbar"><button class="back" data-back>← ${label}</button></div>`;
+function wireBack(root){root.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>go("orders"));}
+
+function render(){
+  document.documentElement.dataset.tb=settings.theme==="dark"?"dark":"light";
+  document.querySelectorAll("[data-role]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.role===role));
+  $("#shopname").textContent=shop();
+  $("#rolenote").textContent=role==="sec"
+    ?"Secretary logs clothes, checks them before bagging, and records pickup. No prices, money or customer numbers on this phone."
+    :"Owner logs clothes too, gets every order the secretary logs, sends WhatsApp messages, and records payment.";
+  const tabs=role==="sec"?[["orders","Orders"],["new","+ Log clothes"]]:[["orders","Orders"],["new","+ Log clothes"],["prices","Settings"]];
+  $("#tabs").innerHTML=tabs.map(([k,l])=>`<button data-tab="${k}" ${k==="new"?'class="new"':""} ${tab===k?'aria-current="page"':""}>${l}</button>`).join("");
+  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>go(TAB_HASH[b.dataset.tab]));
+  if(tab==="orders")renderOrders();else if(tab==="new")renderNew();else renderSettings();
+  if(openNo)openOrder(openNo);else $("#sheet").hidden=true;
+  save();
+}
+
+function pills(o){
+  const own=role==="own";
+  const m=own
+    ?{new:["Send list","p-new"],listed:["In progress","p-billed"],ready:["Ready, not told","p-new"],told:["Customer told","p-ready"],picked:["Picked up","p-collected"]}
+    :{new:["In progress","p-billed"],listed:["In progress","p-billed"],ready:["Ready","p-ready"],told:["Ready","p-ready"],picked:["Picked up","p-collected"]};
+  let h=`<span class="pill ${m[o.status][1]}">${m[o.status][0]}</span>`;
+  if(own&&!o.billed&&o.status!=="new")h+=`<span class="pill p-new">No bill yet</span>`;
+  if(own&&o.paid&&(o.status==="new"||o.status==="listed"))h+=`<span class="pill p-ready">Paid ${naira(o.paid)}</span>`;
+  if(o.billed&&(o.status==="told"||o.status==="picked")){
+    if(own&&owed(o))h+=`<span class="pill p-owed">Owes ${naira(owed(o))}</span>`;
+    if(!own)h+=`<span class="pill ${owed(o)?"p-owed":"p-collected"}">${owed(o)?"Not paid":"Paid"}</span>`;
+  }
+  return h;
+}
+
+function renderOrders(){
+  const own=role==="own";
+  const fresh=orders.filter(o=>!o.notified);
+  const toList=orders.filter(o=>o.status==="new");
+  const notTold=orders.filter(o=>o.status==="ready");
+  const owing=orders.reduce((s,o)=>s+((o.status==="told"||o.status==="picked")?owed(o):0),0);
+  const inShop=orders.filter(o=>o.status!=="picked");
+  const fl=own
+    ?[["all","All"],["new","Send list"],["ready","Ready, not told"],["owed","Owing"],["picked","Picked up"]]
+    :[["all","All"],["work","In progress"],["ready","Ready"],["picked","Picked up"]];
+  let list=orders.filter(o=>{
+    if(filter==="work"&&!(o.status==="new"||o.status==="listed"))return false;
+    if(filter==="new"&&o.status!=="new")return false;
+    if(filter==="ready"&&!(own?o.status==="ready":(o.status==="ready"||o.status==="told")))return false;
+    if(filter==="owed"&&!((o.status==="told"||o.status==="picked")&&owed(o)))return false;
+    if(filter==="picked"&&o.status!=="picked")return false;
+    if(query){const c=cust(o.phone),q=query.toLowerCase().replace(/\s/g,"");
+      return (own&&c.phone.includes(q))||c.name.toLowerCase().replace(/\s/g,"").includes(q)||c.mark.toLowerCase()===q||String(o.no).includes(q);}
+    return true;
+  }).sort((a,b)=>b.no-a.no);
+  view.innerHTML=`
+    ${own&&fresh.length?`<div class="alert"><span>${fresh.length} new order${fresh.length>1?"s":""} logged by the secretary. Send the list of clothes to the customer.</span><button id="seen">See</button></div>`:""}
+    ${own?`<div class="stats">
+      <button class="stat ${toList.length?"hot":""}" data-go="new"><b>${toList.length}</b><span>Send list</span></button>
+      <button class="stat ${notTold.length?"hot":""}" data-go="ready"><b>${notTold.length}</b><span>Ready, not told</span></button>
+      <button class="stat" data-go="owed"><b>${naira(owing)}</b><span>Owed to you</span></button></div>`
+    :`<div class="stats" style="grid-template-columns:1fr 1fr">
+      <div class="stat"><b>${inShop.length}</b><span>Orders in the shop</span></div>
+      <div class="stat"><b>${inShop.reduce((s,o)=>s+calc(o).count,0)}</b><span>Clothes in the shop</span></div></div>`}
+    <input class="search" id="q" placeholder="${own?"Search phone, name or mark (BO)":"Search name or mark (BO)"}" value="${esc(query)}" aria-label="Search">
+    <div class="chips">${fl.map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join("")}</div>
+    <div class="list">${list.length?list.map(o=>{const c=cust(o.phone),k=calc(o);return `
+      <button class="order" data-no="${o.no}">
+        <div class="mark">${esc(c.mark)}</div>
+        <div class="who"><b>${esc(c.name)}</b><span>#${o.no} · ${k.count} items · ${BRANCHES[o.branch]}${o.pickup?" · pickup":""}</span></div>
+        <div class="right">${own&&o.billed?`<b>${naira(k.total)}</b>`:""}${pills(o)}</div>
+      </button>`}).join(""):`<div class="empty">No orders here. Change the filter, or tap “+ Log clothes” to add one.</div>`}</div>
+    <p class="foot">Sample data for demo only · Tagbook by Ordiventa</p>`;
+  $("#q").oninput=e=>{query=e.target.value;const p=e.target.selectionStart;renderOrders();const q=$("#q");q.focus();q.setSelectionRange(p,p);};
+  view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{filter=c.dataset.f;renderOrders();});
+  view.querySelectorAll("[data-go]").forEach(c=>c.onclick=()=>{filter=c.dataset.go;renderOrders();});
+  view.querySelectorAll(".order").forEach(b=>b.onclick=()=>go("order-"+b.dataset.no));
+  const s=$("#seen");if(s)s.onclick=()=>{fresh.forEach(o=>o.notified=true);filter="new";renderOrders();};
+}
+
+/* ---------- Log clothes ---------- */
+let d;
+function reset(){d={phone:"",name:"",hasMark:null,mark:"",branch:0,svc:"wash",items:[],express:false,pickup:false,askSpecial:false,specialName:"",paid:0};}
+reset();
+function suggest(name){
+  const parts=name.trim().split(/\s+/).filter(Boolean);const tries=[];
+  if(parts[0])tries.push(parts[0].slice(0,2));
+  if(parts[0]&&parts[1])tries.push(parts[0][0]+parts[1][0]);
+  if(parts[0])tries.push(parts[0][0]+(parts[0][2]||"X"));
+  for(const t of tries){const m=t.toUpperCase().replace(/[^A-Z]/g,"");if(m.length===2&&!customers.some(c=>c.mark===m))return m;}
+  const base=(tries[0]||"XX").toUpperCase();let n=2;while(customers.some(c=>c.mark===base+n))n++;return base+n;
+}
+function renderNew(){
+  const own=role==="own";
+  const existing=d.phone.length===11?cust(d.phone):null;
+  let markBlock="";
+  if(existing){
+    markBlock=`<div class="found">Returning customer: <b>${esc(existing.name)}</b>. Their mark is <b>${esc(existing.mark)}</b>.</div>`;
+  }else if(d.phone.length===11){
+    const clash=d.hasMark==="yes"&&d.mark&&customers.find(c=>c.mark===d.mark);
+    markBlock=`
+      <label for="nm">Customer name</label><input id="nm" placeholder="e.g. Bola Ogun" value="${esc(d.name)}" autocomplete="off">
+      <label>Does this customer already have a mark on their clothes?</label>
+      <div class="chips" style="margin:0"><button class="chip" data-hm="yes" aria-pressed="${d.hasMark==="yes"}">Yes, use it</button><button class="chip" data-hm="no" aria-pressed="${d.hasMark==="no"}">No, give one</button></div>
+      ${d.hasMark==="yes"?`<label for="mk">Their mark</label><input id="mk" placeholder="e.g. BL" value="${esc(d.mark)}" autocomplete="off">
+        ${clash?`<div class="bad">${esc(clash.mark)} is already used by ${esc(clash.name)}. Use a different mark so their clothes don't mix.</div>`:""}`:""}
+      ${d.hasMark==="no"&&d.name.trim()?`<div class="found">New mark: <b>${suggest(d.name)}</b>. Write this inside every cloth.</div>`:""}`;
+  }else{
+    markBlock=`<p class="hint">Try 0803 412 7790 (Bolu, mark BO). Or type any new number to add a new customer.</p>`;
+  }
+  const count=d.items.reduce((s,it)=>s+it.qty,0);
+  const ok=d.items.length&&d.phone.length===11&&(existing||(d.name.trim()&&(d.hasMark==="no"||(d.hasMark==="yes"&&d.mark&&!customers.some(c=>c.mark===d.mark)))));
+  view.innerHTML=`
+    ${backBtn("Orders")}
+    <h2>Log clothes</h2>
+    <label for="ph">Customer phone</label>
+    <input id="ph" type="text" inputmode="tel" placeholder="0803 412 7790" value="${d.phone}" autocomplete="off">
+    ${markBlock}
+    <label for="br">Dropped at</label>
+    <select id="br">${BRANCHES.map((b,i)=>`<option value="${i}" ${d.branch===i?"selected":""}>${b}</option>`).join("")}</select>
+    <label>Service</label>
+    <div class="chips" style="margin:0">${Object.entries(SERVICES).map(([s,l])=>`<button class="chip" data-svc="${s}" aria-pressed="${d.svc===s}">${l}</button>`).join("")}</div>
+    <label>Tap to add clothes</label>
+    <div class="picker">${PRICES.map(p=>`<button data-add="${p.id}">${p.name}${p.custom?"<small>Wedding gown, curtain...</small>":""}</button>`).join("")}</div>
+    ${d.askSpecial?`<div class="check" style="margin-top:8px"><label for="sp" style="margin-top:0">What is the special item?</label>
+      <input id="sp" placeholder="e.g. Wedding gown" value="${esc(d.specialName)}" autocomplete="off">
+      <div class="row"><button class="btn btn-ghost" id="spc">Cancel</button><button class="btn btn-primary" id="spa" ${d.specialName.trim()?"":"disabled"}>Add item</button></div></div>`:""}
+    <div class="items">${d.items.map((it,i)=>`
+      <div class="item"><span>${esc(pname(it))}<br><small style="color:var(--muted)">${SERVICES[it.svc]}</small></span>
+      <div class="qty"><button data-dec="${i}" aria-label="Remove one">−</button><b style="min-width:22px;text-align:center">${it.qty}</b><button data-inc="${i}" aria-label="Add one">+</button></div></div>`).join("")}</div>
+    <label class="toggle"><span>Express delivery</span><input type="checkbox" id="ex" ${d.express?"checked":""}></label>
+    <label class="toggle"><span>Pickup and delivery</span><input type="checkbox" id="pk" ${d.pickup?"checked":""}></label>
+    ${own?`<label for="pd">Paid at drop-off (₦)</label><input id="pd" ${moneyAttrs} placeholder="0" value="${d.paid||""}">
+      <p class="hint">Leave empty if the customer will pay when collecting.</p>`:""}
+    <div class="lines"><div><b>Clothes logged</b><b>${count}</b></div></div>
+    <p class="hint">${own?"After saving, you can send the list of clothes to the customer straight away.":"Saving sends this order to the owner's phone. The owner sends the list of clothes to the customer."}</p>
+    <button class="btn btn-primary" id="save" ${ok?"":"disabled"}>${own?"Save order":"Save and send to owner"}</button>
+    <button class="btn btn-ghost" id="clr">Clear</button>`;
+  wireBack(view);
+  const keep=(id,fn)=>{const el=$(id);if(!el)return;el.oninput=e=>{fn(e.target.value);const p=e.target.selectionStart;renderNew();const n=$(id);if(n){n.focus();try{n.setSelectionRange(p,p)}catch(_){}}}};
+  keep("#ph",v=>d.phone=digits(v).slice(0,11));
+  keep("#nm",v=>d.name=v.replace(/[^a-z\s'-]/gi,""));
+  keep("#mk",v=>d.mark=v.replace(/[^a-z0-9]/gi,"").slice(0,4).toUpperCase());
+  keep("#sp",v=>d.specialName=v);
+  moneyInput($("#pd"),v=>d.paid=v);
+  $("#br").onchange=e=>d.branch=+e.target.value;
+  $("#ex").onchange=e=>{d.express=e.target.checked;};
+  $("#pk").onchange=e=>{d.pickup=e.target.checked;};
+  view.querySelectorAll("[data-hm]").forEach(b=>b.onclick=()=>{d.hasMark=b.dataset.hm;renderNew();});
+  view.querySelectorAll("[data-svc]").forEach(b=>b.onclick=()=>{d.svc=b.dataset.svc;renderNew();});
+  view.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;
+    if(id==="special"){d.askSpecial=true;d.specialName="";renderNew();$("#sp").focus();return;}
+    const f=d.items.find(i=>i.id===id&&i.svc===d.svc);f?f.qty++:d.items.push({id,svc:d.svc,qty:1});renderNew();});
+  if($("#spc"))$("#spc").onclick=()=>{d.askSpecial=false;renderNew();};
+  if($("#spa"))$("#spa").onclick=()=>{d.items.push({id:"special",svc:d.svc,qty:1,label:d.specialName.trim()});d.askSpecial=false;renderNew();};
+  view.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{d.items[+b.dataset.inc].qty++;renderNew();});
+  view.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>{const i=+b.dataset.dec;d.items[i].qty--;if(!d.items[i].qty)d.items.splice(i,1);renderNew();});
+  $("#clr").onclick=()=>{reset();renderNew();};
+  $("#save").onclick=()=>{
+    let c=cust(d.phone);
+    if(!c){c={phone:d.phone,name:d.name.trim(),mark:d.hasMark==="yes"?d.mark:suggest(d.name)};customers.push(c);}
+    const o={no:nextNo++,phone:c.phone,branch:d.branch,items:d.items.map(i=>({...i})),express:d.express,pickup:d.pickup,delivery:0,discount:0,custom:{},status:"new",billed:false,paid:own?d.paid:0,dropped:day(0),checked:{},checking:false,notified:own,again:{}};
+    orders.push(o);reset();filter="all";
+    if(own){go("order-"+o.no);toast(`Saved. Write ${c.mark} inside every cloth.`);}
+    else{go("orders");toast(`Saved. Write ${c.mark} inside every cloth. The owner has been told.`);}
+  };
+}
+
+/* ---------- Messages ---------- */
+function billLines(o){
+  const k=calc(o);
+  return o.items.map((it,i)=>`${it.qty} x ${pname(it)} ${naira(unitPrice(o,it,i)*it.qty)}`).join("\n")
+    +(k.exp?`\nExpress delivery: ${naira(k.exp)}`:"")+(o.delivery?`\nPickup/delivery: ${naira(o.delivery)}`:"")+(o.discount?`\nDiscount: -${naira(o.discount)}`:"");
+}
+function message(o,type){
+  const c=cust(o.phone),k=calc(o),first=c.name.split(" ")[0];
+  if(type==="list"){
+    const list=o.items.map(it=>`${it.qty} x ${pname(it)} (${SERVICES[it.svc]})`).join("\n");
+    return `Hello ${first}, ${shop()} has received your clothes.\nOrder #${o.no} · Mark ${c.mark} · ${k.count} items\n\n${list}${o.paid?`\n\nPayment received: ${naira(o.paid)}`:""}\n\nWe will let you know when your clothes are ready, and send your bill with it.\n\nSent with Tagbook`;
+  }
+  if(type==="ready")return `Hello ${first}, your clothes are ready at ${shop()}.\nCollect at: ${BRANCHES[o.branch]}\n\nINVOICE INV-${o.no}\nDate: ${day(0)}\nCustomer: ${c.name} (Mark ${c.mark})\n${k.count} items\n\n${billLines(o)}\n\nTotal: ${naira(k.total)}${o.paid?`\nPaid: ${naira(o.paid)}`:""}${owed(o)?`\nAmount to pay: ${naira(owed(o))}${payTo()}`:"\nFully paid. Thank you."}\n\nSent with Tagbook`;
+  return `Hello ${first}, a reminder from ${shop()}: invoice INV-${o.no} has ${naira(owed(o))} still to pay.${payTo()}\n\nThank you.\nSent with Tagbook`;
+}
+const wa=(o,t)=>"https://wa.me/234"+o.phone.slice(1)+"?text="+encodeURIComponent(t);
+const MSG_NAMES={list:"list of clothes",ready:"clothes ready, with invoice",owe:"payment reminder"};
+function waBlock(o,type,markable){
+  return `<p class="wa-label">WhatsApp to customer: ${MSG_NAMES[type]}</p>
+    <div class="wa" id="wamsg-${type}">${esc(message(o,type))}</div>
+    <a class="btn btn-primary" href="${wa(o,message(o,type))}" target="_blank" rel="noopener" data-open="${type}">Open in WhatsApp</a>
+    <div class="row"><button class="btn btn-ghost" data-copy="${type}">Copy</button>${markable?`<button class="btn btn-ghost" data-done="${type}">I've sent it</button>`:""}</div>
+    ${(type==="ready"||type==="owe")&&owed(o)&&!hasBank()?`<p class="bad">Add your bank account in Settings so the invoice tells the customer where to pay.</p>`:""}
+    ${markable?`<p class="hint">After sending, tap “I've sent it”. Until then this message stays here.</p>`:""}`;
+}
+const sentLine=(o,type,text)=>o.again[type]?waBlock(o,type,false):`<div class="sent"><span>${text}</span><button data-again="${type}">Send again</button></div>`;
+
+/* ---------- Order detail ---------- */
+function openOrder(no){
+  const o=orders.find(x=>x.no===no),c=cust(o.phone),k=calc(o),sh=$("#sheet"),own=role==="own";
+  if(own)o.notified=true;
+  const idx=STEPS.findIndex(s=>s[0]===o.status);
+  const allChecked=o.items.every((_,i)=>o.checked[i]);
+  const canEditBill=own&&o.status!=="picked";
+  let html="";
+  const checkHtml=()=>{
+    if(!(o.status==="new"||o.status==="listed"))return "";
+    return o.checking?`<div class="check"><p><b>Check before bagging.</b> Gather every cloth with mark <b>${esc(c.mark)}</b> inside, and tick each one. If something is missing, you find out now, not when the customer comes.</p>
+        ${o.items.map((it,i)=>`<label class="ck"><input type="checkbox" data-ck="${i}" ${o.checked[i]?"checked":""}> ${it.qty} × ${esc(pname(it))}</label>`).join("")}
+        <button class="btn btn-primary" id="rd" ${allChecked?"":"disabled"}>All here. Mark ready</button></div>`
+      :`<button class="btn ${own?"btn-ghost":"btn-primary"}" id="washed" style="margin-top:16px">Clothes are washed and ironed</button>
+        <p class="hint">Tap this when the work is done. You'll check every cloth with mark ${esc(c.mark)} before bagging.</p>`;
+  };
+
+  if(own){
+    // 1. list of clothes
+    if(o.status==="new")html+=waBlock(o,"list",true);
+    else html+=sentLine(o,"list","List of clothes sent.");
+    // 2. clothes ready, with bill
+    if(o.status==="ready")html+=o.billed?waBlock(o,"ready",true):`<p class="bad">Clothes are packed and ready. Save the bill below first so the message can include it.</p>`;
+    if(o.status==="told"||(o.status==="picked"&&o.billed))html+=sentLine(o,"ready","Ready message and invoice sent.");
+    // 3. bill
+    html+=`<h2 style="margin-top:18px">Bill ${o.billed?`<span class="pill p-ready" style="vertical-align:middle">Saved</span>`:""}</h2>`;
+    if(canEditBill){
+      html+=`<div class="lines">
+        ${o.items.map((it,i)=>{const p=PRICES.find(x=>x.id===it.id);return `<div><span>${it.qty} × ${esc(pname(it))}<br><small style="color:var(--muted)">${SERVICES[it.svc]}</small></span>${p.custom?`<input data-cp="${i}" ${moneyAttrs} placeholder="Set price" value="${o.custom[i]||""}" aria-label="Price for ${esc(pname(it))}">`:`<span>${naira(unitPrice(o,it,i)*it.qty)}</span>`}</div>`}).join("")}
+        <div><label class="ck" style="margin:0"><input type="checkbox" id="ex" ${o.express?"checked":""}> Express delivery (${expressLabel()})</label><span id="exv">${naira(k.exp)}</span></div>
+        <div><span>Pickup / delivery${o.pickup?"<br><small style='color:var(--muted)'>Customer asked for it</small>":""}</span><input id="dl" ${moneyAttrs} placeholder="0" value="${o.delivery||""}" aria-label="Pickup or delivery cost"></div>
+        <div><span>Discount</span><input id="dc" ${moneyAttrs} placeholder="0" value="${o.discount||""}" aria-label="Discount"></div>
+        <div><b>Total</b><b id="tot">${naira(k.total)}</b></div></div>
+        <button class="btn ${o.billed?"btn-ghost":"btn-primary"}" id="bill">${o.billed?"Update bill":"Save bill"}</button>
+        ${o.status==="new"||o.status==="listed"?`<p class="hint">You can save or change the bill any time. It goes to the customer only when the clothes are packed and ready.</p>`:""}`;
+    }else{
+      html+=`<div class="lines">
+        ${o.items.map((it,i)=>`<div><span>${it.qty} × ${esc(pname(it))}</span><span>${naira(unitPrice(o,it,i)*it.qty)}</span></div>`).join("")}
+        ${k.exp?`<div><span>Express delivery</span><span>${naira(k.exp)}</span></div>`:""}
+        ${o.delivery?`<div><span>Pickup / delivery</span><span>${naira(o.delivery)}</span></div>`:""}
+        ${o.discount?`<div><span>Discount</span><span>−${naira(o.discount)}</span></div>`:""}
+        <div><b>Total</b><b>${naira(k.total)}</b></div></div>`;
+    }
+    // 4. payment (works before the bill too, for customers who pay early)
+    html+=`<h2 style="margin-top:18px">Payment</h2><div class="lines">
+      ${o.billed?`<div><span>Total</span><span>${naira(k.total)}</span></div>`:""}
+      <div><span>Paid so far</span><span>${naira(o.paid)}</span></div>
+      ${o.billed?`<div><b ${owed(o)?'style="color:var(--warn)"':""}>Still to pay</b><b ${owed(o)?'style="color:var(--warn)"':""}>${naira(owed(o))}</b></div>`
+        :`<div><span style="color:var(--muted)">Balance shows once the bill is saved</span><span></span></div>`}</div>
+      ${!o.billed||owed(o)?`<label for="pay">Amount received (₦)</label><input id="pay" ${moneyAttrs} placeholder="${owed(o)||"0"}">
+      <button class="btn btn-primary" id="pp">Record payment</button>
+      ${!o.billed?`<p class="hint">Use this when a customer pays before the clothes are ready.</p>`:""}`:`<p class="hint">Fully paid.</p>`}`;
+    if(o.status==="picked"&&owed(o))html+=waBlock(o,"owe",false);
+    html+=checkHtml();
+  }else{
+    html+=`<div class="lines">${o.items.map(it=>`<div><span>${it.qty} × ${esc(pname(it))}</span><span style="color:var(--muted)">${SERVICES[it.svc]}</span></div>`).join("")}
+      <div><b>Clothes</b><b>${k.count}</b></div>
+      ${o.billed&&(o.status==="told"||o.status==="picked")?`<div><span>Payment</span><span class="pill ${owed(o)?"p-owed":"p-collected"}">${owed(o)?"Not paid":"Paid"}</span></div>`:""}</div>`;
+    html+=checkHtml();
+    if(o.status==="ready")html+=`<p class="hint" style="margin-top:12px">Ready and bagged. Waiting for the owner to tell the customer.</p>`;
+  }
+  if(o.status==="ready"||o.status==="told")html+=`<button class="btn btn-ghost" id="pick" style="margin-top:16px">Clothes picked up</button>
+    <p class="hint">Mark this when the customer takes the clothes${own?". Payment is recorded separately, because some customers pay later.":". Payment is recorded by the owner."}</p>`;
+
+  const y=sh.hidden?0:sh.scrollTop;
+  sh.innerHTML=`<div class="app">
+    ${backBtn("All orders")}
+    <div class="dhead"><div class="mark">${esc(c.mark)}</div><div><b>${esc(c.name)}</b>
+      <span>${own?fmtPhone(c.phone)+" · ":""}#${o.no} · ${BRANCHES[o.branch]}${o.pickup?" · pickup":""}${o.express?" · express delivery":""}</span></div></div>
+    <div class="steps">${STEPS.map((s,i)=>`<div class="${i<=idx?"on":""}"><i></i>${s[1]}</div>`).join("")}</div>
+    <p class="hint">Dropped ${o.dropped}</p>
+    ${html}
+  </div>`;
+  const wasHidden=sh.hidden;sh.hidden=false;sh.scrollTop=wasHidden?0:y;
+  wireBack(sh);
+  save();
+  const again=()=>openOrder(no);
+  const markSent=t=>{
+    if(t==="list"&&o.status==="new"){o.status="listed";toast("List of clothes marked as sent");}
+    if(t==="ready"&&o.status==="ready"){o.status="told";toast("Customer marked as told");}
+    o.again[t]=false;
+  };
+  sh.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{const t=message(o,b.dataset.copy);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast("Message copied")).catch(()=>{const r=document.createRange();r.selectNodeContents($("#wamsg-"+b.dataset.copy));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Message selected. Copy it.");});});
+  sh.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{markSent(b.dataset.done);again();});
+  sh.querySelectorAll("[data-again]").forEach(b=>b.onclick=()=>{o.again[b.dataset.again]=true;again();});
+  const live=()=>{const kk=calc(o);$("#tot").textContent=naira(kk.total);$("#exv").textContent=naira(kk.exp);};
+  sh.querySelectorAll("[data-cp]").forEach(i=>moneyInput(i,v=>{o.custom[i.dataset.cp]=v;live();}));
+  moneyInput($("#dl"),v=>{o.delivery=v;live();});
+  moneyInput($("#dc"),v=>{o.discount=v;live();});
+  moneyInput($("#pay"),()=>{});
+  if($("#ex"))$("#ex").onchange=e=>{o.express=e.target.checked;live();};
+  const bill=$("#bill");if(bill)bill.onclick=()=>{
+    const miss=o.items.find((it,i)=>PRICES.find(p=>p.id===it.id).custom&&!o.custom[i]);
+    if(miss){toast(`Set a price for ${pname(miss)} first`);return;}
+    o.billed=true;toast("Bill saved");again();};
+  const pp=$("#pp");if(pp)pp.onclick=()=>{const v=num($("#pay").value);if(!v){toast("Type the amount received");return;}
+    o.paid=o.billed?Math.min(calc(o).total,o.paid+v):o.paid+v;toast(o.billed&&owed(o)?`Recorded. ${naira(owed(o))} still to pay.`:o.billed?"Fully paid":`Recorded ${naira(o.paid)} paid early`);again();};
+  const w=$("#washed");if(w)w.onclick=()=>{o.checking=true;again();};
+  sh.querySelectorAll("[data-ck]").forEach(b=>b.onchange=()=>{o.checked[b.dataset.ck]=b.checked;again();});
+  const rd=$("#rd");if(rd)rd.onclick=()=>{o.status="ready";toast(own?"Marked ready. Send the ready message.":"Marked ready. The owner has been told.");again();};
+  const pk=$("#pick");if(pk)pk.onclick=()=>{o.status="picked";toast(owed(o)?"Picked up. Not fully paid yet.":"Picked up");again();};
+}
+
+/* ---------- Settings (owner) ---------- */
+function renderSettings(){
+  view.innerHTML=`${backBtn("Orders")}<h2>Settings</h2>
+    <div class="check">
+      <label for="sn" style="margin-top:0">Dry cleaning business name</label>
+      <input id="sn" value="${esc(settings.shopName)}" placeholder="e.g. Saheed Dry Cleaners" autocomplete="off">
+      <p class="hint">This name appears at the top of the app and in every WhatsApp message.</p>
+    </div>
+    <div class="check">
+      <p><b>Appearance</b></p>
+      <div class="chips" style="margin:0"><button class="chip" data-th="light" aria-pressed="${settings.theme!=="dark"}">Light</button><button class="chip" data-th="dark" aria-pressed="${settings.theme==="dark"}">Dark</button></div>
+    </div>
+    <div class="check">
+      <p><b>Bank account for payments</b></p>
+      <p class="hint" style="margin:0">Added to every invoice and payment reminder, so customers know where to pay.</p>
+      <label for="bn">Bank name</label>
+      <input id="bn" value="${esc(settings.bankName)}" placeholder="e.g. GTBank" autocomplete="off">
+      <label for="an">Account number</label>
+      <input id="an" ${moneyAttrs} maxlength="10" value="${settings.acctNo}" placeholder="10 digits">
+      <p class="hint" id="anx">${settings.acctNo.length===10?"":"Account number must be 10 digits."}</p>
+      <label for="am" style="margin-top:6px">Account name</label>
+      <input id="am" value="${esc(settings.acctName)}" placeholder="Name on the account" autocomplete="off">
+    </div>
+    <div class="check">
+      <p><b>Express delivery charge</b></p>
+      <p class="hint" style="margin:0 0 8px">How does your shop charge for express delivery? This is added to the bill when an order is marked express delivery.</p>
+      <div class="chips" style="margin:0 0 8px"><button class="chip" data-et="percent" aria-pressed="${settings.expressType==="percent"}">Percentage extra</button><button class="chip" data-et="fixed" aria-pressed="${settings.expressType==="fixed"}">Fixed amount</button></div>
+      <label for="ev" style="margin-top:0">${settings.expressType==="percent"?"Extra percentage (%)":"Extra amount per order (₦)"}</label>
+      <input id="ev" ${moneyAttrs} value="${settings.expressValue}">
+      <p class="hint" id="evx">${exampleExpress()}</p>
+    </div>
+    <h2 style="margin-top:18px">Price list</h2>
+    <div class="lines" style="padding:4px 14px">
+      <div class="price-row head"><span>Item</span><span>Wash & iron</span><span>Dry clean</span></div>
+      ${PRICES.filter(p=>!p.custom).map(p=>`<div class="price-row"><span>${p.name}</span><span>${naira(p.wash)}</span><span>${naira(p.dry)}</span></div>`).join("")}
+    </div>
+    <p class="hint">Iron only is about 60% of wash and iron. Special items, like a wedding gown, get their price when you make the bill.</p>
+    <button class="btn btn-ghost" id="rst" style="margin-top:20px">Reset demo to sample data</button>
+    <p class="foot">Sample prices for demo only. Demo changes are saved on this device only.</p>`;
+  wireBack(view);
+  $("#sn").oninput=e=>{settings.shopName=e.target.value.slice(0,40);$("#shopname").textContent=shop();save();};
+  view.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{settings.theme=b.dataset.th;document.documentElement.dataset.tb=settings.theme;save();renderSettings();});
+  $("#bn").oninput=e=>{settings.bankName=e.target.value.slice(0,40);save();};
+  $("#am").oninput=e=>{settings.acctName=e.target.value.slice(0,60);save();};
+  $("#rst").onclick=()=>{if(!$("#rst").dataset.sure){$("#rst").dataset.sure="1";$("#rst").textContent="Tap again to reset";return;}try{localStorage.removeItem(SAVE_KEY);}catch(_){}location.hash="orders";location.reload();};
+  moneyInput($("#an"),()=>{const el=$("#an");if(el.value.length>10)el.value=el.value.slice(0,10);settings.acctNo=el.value;save();$("#anx").textContent=settings.acctNo.length===10?"":"Account number must be 10 digits.";});
+  view.querySelectorAll("[data-et]").forEach(b=>b.onclick=()=>{settings.expressType=b.dataset.et;settings.expressValue=b.dataset.et==="percent"?50:1000;renderSettings();});
+  moneyInput($("#ev"),v=>{settings.expressValue=settings.expressType==="percent"?Math.min(v,300):v;$("#evx").textContent=exampleExpress();save();});
+}
+function exampleExpress(){return `Example: a ${naira(5000)} order marked express delivery costs ${naira(5000+expressFor(5000))}.`;}
+route();
+</script>
+</body></html>
