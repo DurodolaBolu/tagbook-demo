@@ -1,6 +1,6 @@
 // Tagbook demo service worker: makes the app installable and opens it offline after the first visit.
-const CACHE = "tagbook-demo-20261105214013";
-const FILES = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/jspdf.umd.min.js"];
+const CACHE = "tagbook-demo-20261105214715";
+const FILES = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 // Network first, so every push shows up straight away; cache only when offline.

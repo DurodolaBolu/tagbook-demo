@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tagbook">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<script>window.TB_BUILD="20261105214013";</script>
+<script>window.TB_BUILD="20261105214715";</script>
 <title>Tagbook Demo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -125,6 +125,11 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 .wa-label{font-size:13px;color:var(--muted);margin:16px 0 0;font-weight:600}
 .wa{background:var(--wa);color:var(--wa-ink);border-radius:12px 12px 12px 4px;padding:12px 14px;margin-top:6px;font-size:16px;white-space:pre-wrap;line-height:1.5}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:16px;z-index:20;max-width:90vw}
+.pitem{margin-top:8px}
+.pitem .x{flex:none;height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--field);background:var(--card);color:var(--owes);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.pgrid>div{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.pgrid input{text-align:right}
 .price-row{display:grid;grid-template-columns:minmax(0,1fr) 84px 84px 34px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px;font-variant-numeric:tabular-nums}
 .price-row:last-child{border-bottom:0}
 .price-row input{padding:7px 8px;font-size:16px;text-align:right}
@@ -153,20 +158,19 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-wei
 <div id="sheet" class="sheet" hidden></div>
 <div id="toast" class="toast" hidden></div>
 
-<script src="/jspdf.umd.min.js"></script>
 <script>
 const BRANCHES=["Main branch","Awule point","Oke-Ijebu point"];
-const SERVICES={wash:"Wash and iron",dry:"Dry clean",iron:"Iron only"};
+const SERVICES={wi:"Wash and iron",wo:"Wash only",io:"Iron only",wsi:"Wash, starch and iron"};
 let PRICES=[
-  {id:"shirt",name:"Shirt",wash:800,dry:1200},
-  {id:"trouser",name:"Trouser",wash:800,dry:1200},
-  {id:"roundneck",name:"Round neck",wash:500,dry:800},
-  {id:"native",name:"Native (2 piece)",wash:1500,dry:2500},
-  {id:"agbada",name:"Agbada (3 piece)",wash:3000,dry:4500},
-  {id:"hoodie",name:"Hoodie / cardigan",wash:1000,dry:1500},
-  {id:"singlet",name:"Singlet / underwear",wash:300,dry:300},
-  {id:"suit",name:"Suit (2 piece)",wash:2500,dry:3500},
-  {id:"duvet",name:"Duvet",wash:4000,dry:5000},
+  {id:"shirt",name:"Shirt",p:{wi:800,wo:500,io:300,wsi:1000}},
+  {id:"trouser",name:"Trouser",p:{wi:800,wo:500,io:300,wsi:1000}},
+  {id:"roundneck",name:"Round neck",p:{wi:500,wo:300,io:200,wsi:null}},
+  {id:"native",name:"Native (2 piece)",p:{wi:1500,wo:1000,io:600,wsi:2000}},
+  {id:"agbada",name:"Agbada (3 piece)",p:{wi:3000,wo:2000,io:1200,wsi:4000}},
+  {id:"hoodie",name:"Hoodie / cardigan",p:{wi:1000,wo:700,io:null,wsi:null}},
+  {id:"singlet",name:"Singlet / underwear",p:{wi:null,wo:200,io:null,wsi:null}},
+  {id:"suit",name:"Suit (2 piece)",p:{wi:2500,wo:1500,io:1000,wsi:3000}},
+  {id:"duvet",name:"Duvet",p:{wi:null,wo:3000,io:null,wsi:null}},
   {id:"special",name:"Special item",custom:true},
 ];
 const settings={shopName:"BrightWash Dry Cleaners",expressType:"percent",expressValue:50,bankName:"GTBank",acctNo:"0123456789",acctName:"BrightWash Dry Cleaners",theme:"light"};
@@ -185,19 +189,19 @@ const moneyAttrs='type="text" inputmode="numeric" pattern="[0-9]*" autocomplete=
 const shop=()=>settings.shopName.trim()||"Your dry cleaner";
 
 let customers=[
-  {phone:"08034127790",name:"Bolu Adeyemi",mark:"BO"},
-  {phone:"08061234567",name:"Bola Ogun",mark:"BL"},
-  {phone:"07039876543",name:"Chidi Okafor",mark:"CH"},
-  {phone:"08129990011",name:"Funmi Alade",mark:"FA"},
-  {phone:"09055512345",name:"Kunle Bello",mark:"KB"},
+  {phone:"08000000001",name:"Bolu Adeyemi",mark:"BO",sample:true},
+  {phone:"08000000002",name:"Bola Ogun",mark:"BL",sample:true},
+  {phone:"08000000003",name:"Chidi Okafor",mark:"CH",sample:true},
+  {phone:"08000000004",name:"Funmi Alade",mark:"FA",sample:true},
+  {phone:"08000000005",name:"Kunle Bello",mark:"KB",sample:true},
 ];
 let nextNo=146;
 let orders=[
-  mk(141,"08129990011",1,[["native","wash",2],["duvet","wash",1]],{status:"picked",billed:true,paidAll:true,dropped:-6}),
-  mk(142,"09055512345",0,[["hoodie","wash",2],["singlet","wash",5],["roundneck","wash",4]],{status:"picked",billed:true,dropped:-5}),
-  mk(143,"08034127790",0,[["agbada","dry",1],["shirt","wash",3],["trouser","wash",2]],{status:"ready",billed:true,paid:3000,dropped:-3}),
-  mk(144,"07039876543",2,[["shirt","dry",2],["special","dry",1,"Wedding gown"]],{status:"listed",billed:true,express:true,delivery:1500,custom:{1:6000},dropped:-1}),
-  mk(145,"08061234567",0,[["shirt","wash",4],["roundneck","wash",3]],{status:"new",pickup:true,dropped:0}),
+  mk(141,"08000000004",1,[["native","wi",2],["duvet","wo",1]],{status:"picked",billed:true,paidAll:true,dropped:-6}),
+  mk(142,"08000000005",0,[["hoodie","wi",2],["singlet","wo",5],["roundneck","wi",4]],{status:"picked",billed:true,dropped:-5}),
+  mk(143,"08000000001",0,[["agbada","wsi",1],["shirt","wi",3],["trouser","wi",2]],{status:"ready",billed:true,paid:3000,dropped:-3}),
+  mk(144,"08000000003",2,[["shirt","wsi",2],["special","wo",1,"Wedding gown"]],{status:"listed",billed:true,express:true,delivery:1500,custom:{1:6000},dropped:-1}),
+  mk(145,"08000000002",0,[["shirt","wi",4],["roundneck","wi",3]],{status:"new",pickup:true,dropped:0}),
 ];
 function mk(no,phone,branch,lines,o){
   const ord={no,phone,branch,items:lines.map(([id,svc,qty,label])=>({id,svc,qty,label})),express:!!o.express,pickup:!!o.pickup,
@@ -208,7 +212,7 @@ function mk(no,phone,branch,lines,o){
   return ord;
 }
 function lockPrices(o){o.unit=o.items.map((it,i)=>PRICES.find(x=>x.id===it.id).custom?null:unitPrice({...o,unit:null},it,i));}
-function unitPrice(o,it,i){if(o.unit&&o.unit[i]!=null)return o.unit[i];const p=PRICES.find(x=>x.id===it.id);if(p.custom)return +o.custom[i]||0;return it.svc==="iron"?Math.round(p.wash*0.6/50)*50:p[it.svc];}
+function unitPrice(o,it,i){if(o.unit&&o.unit[i]!=null)return o.unit[i];const p=PRICES.find(x=>x.id===it.id);if(p.custom)return +o.custom[i]||0;return (p.p&&p.p[it.svc])||0;}
 function expressFor(sub){return settings.expressType==="percent"?Math.round(sub*settings.expressValue/100/50)*50:settings.expressValue;}
 function calc(o){
   const sub=o.items.reduce((s,it,i)=>s+unitPrice(o,it,i)*it.qty,0);
@@ -222,7 +226,7 @@ const pname=it=>it.label||PRICES.find(x=>x.id===it.id).name;
 const expressLabel=()=>settings.expressType==="percent"?`+${settings.expressValue}%`:`+${naira(settings.expressValue)}`;
 
 /* demo only: keep changes on this device so closing the page doesn't reset them */
-const SAVE_KEY="tagbook-demo-v2";
+const SAVE_KEY="tagbook-demo-v4";
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({settings,customers,orders,nextNo,prices:PRICES}));}catch(_){}}
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
   if(s&&s.orders&&s.customers){Object.assign(settings,s.settings||{});customers=s.customers;orders=s.orders;nextNo=s.nextNo||nextNo;if(Array.isArray(s.prices))PRICES=s.prices;orders.forEach(o=>{if(o.billed&&!o.unit)lockPrices(o);});}}catch(_){}
@@ -328,7 +332,7 @@ function renderOrders(){
 
 /* ---------- Log clothes ---------- */
 let d;
-function reset(){d={phone:"",name:"",hasMark:null,mark:"",branch:0,svc:"wash",items:[],express:false,pickup:false,askSpecial:false,specialName:"",paid:0};}
+function reset(){d={phone:"",name:"",hasMark:null,mark:"",branch:0,svc:"wi",items:[],express:false,pickup:false,askSpecial:false,specialName:"",paid:0};}
 reset();
 function suggest(name){
   const parts=name.trim().split(/\s+/).filter(Boolean);const tries=[];
@@ -354,7 +358,7 @@ function renderNew(){
         ${clash?`<div class="bad">${esc(clash.mark)} is already used by ${esc(clash.name)}. Use a different mark so their clothes don't mix.</div>`:""}`:""}
       ${d.hasMark==="no"&&d.name.trim()?`<div class="found">New mark: <b>${suggest(d.name)}</b>. Write this inside every cloth.</div>`:""}`;
   }else{
-    markBlock=`<p class="hint">Try 0803 412 7790 (Bolu, mark BO). Or type any new number to add a new customer.</p>`;
+    markBlock=`<p class="hint">Try 0800 000 0001 (Bolu, mark BO). Or type any new number to add a new customer.</p>`;
   }
   const count=d.items.reduce((s,it)=>s+it.qty,0);
   const ok=d.items.length&&d.phone.length===11&&(existing||(d.name.trim()&&(d.hasMark==="no"||(d.hasMark==="yes"&&d.mark&&!customers.some(c=>c.mark===d.mark)))));
@@ -369,7 +373,7 @@ function renderNew(){
     <label>Service</label>
     <div class="chips" style="margin:0">${Object.entries(SERVICES).map(([s,l])=>`<button class="chip" data-svc="${s}" aria-pressed="${d.svc===s}">${l}</button>`).join("")}</div>
     <label>Tap to add clothes</label>
-    <div class="picker">${PRICES.filter(p=>!p.hidden).map(p=>`<button data-add="${p.id}">${p.name}${p.custom?"<small>Wedding gown, curtain...</small>":""}</button>`).join("")}</div>
+    <div class="picker">${PRICES.filter(p=>!p.hidden&&(p.custom||(p.p&&p.p[d.svc]!=null))).map(p=>`<button data-add="${p.id}">${p.name}${p.custom?"<small>Wedding gown, curtain</small>":""}</button>`).join("")}</div>
     ${d.askSpecial?`<div class="check" style="margin-top:8px"><label for="sp" style="margin-top:0">What is the special item?</label>
       <input id="sp" placeholder="e.g. Wedding gown" value="${esc(d.specialName)}" autocomplete="off">
       <div class="row"><button class="btn btn-ghost" id="spc">Cancel</button><button class="btn btn-primary" id="spa" ${d.specialName.trim()?"":"disabled"}>Add item</button></div></div>`:""}
@@ -429,7 +433,8 @@ function message(o,type){
   if(type==="ready")return `Hello ${first}, your clothes are ready at ${shop()}.\nCollect at: ${BRANCHES[o.branch]}\n\nINVOICE INV-${o.no}\nDate: ${day(0)}\nCustomer: ${c.name} (Mark ${c.mark})\n${k.count} items\n\n${billLines(o)}\n\nTotal: ${naira(k.total)}${o.paid?`\nPaid: ${naira(o.paid)}`:""}${owed(o)?`\nAmount to pay: ${naira(owed(o))}${payTo()}`:"\nFully paid. Thank you."}\n\nSent with Tagbook`;
   return `Hello ${first}, a reminder from ${shop()}: invoice INV-${o.no} has ${naira(owed(o))} still to pay.${payTo()}\n\nThank you.\nSent with Tagbook`;
 }
-const wa=(o,t)=>"https://wa.me/234"+o.phone.slice(1)+"?text="+encodeURIComponent(t);
+const isSample=o=>{const c=cust(o.phone);return !!(c&&c.sample);};
+const wa=(o,t)=>(isSample(o)?"https://wa.me/":"https://wa.me/234"+o.phone.slice(1))+"?text="+encodeURIComponent(t);
 const MSG_NAMES={list:"list of clothes",ready:"clothes ready, with invoice",owe:"payment reminder"};
 function waBlock(o,type,markable){
   return `<p class="wa-label">WhatsApp to customer: ${MSG_NAMES[type]}</p>
@@ -437,6 +442,7 @@ function waBlock(o,type,markable){
     <a class="btn btn-primary" href="${wa(o,message(o,type))}" target="_blank" rel="noopener" data-open="${type}">Open in WhatsApp</a>
     <div class="row"><button class="btn btn-ghost" data-copy="${type}">Copy</button>${markable?`<button class="btn btn-ghost" data-done="${type}">I've sent it</button>`:""}</div>
     ${(type==="ready"||type==="owe")&&owed(o)&&!hasBank()?`<p class="bad">Add your bank account in Settings so the invoice tells the customer where to pay.</p>`:""}
+    ${isSample(o)?`<p class="hint">Sample customer: WhatsApp opens without a number, so you choose which chat to send it to.</p>`:""}
     ${markable?`<p class="hint">After sending, tap “I've sent it”. Until then this message stays here.</p>`:""}`;
 }
 const sentLine=(o,type,text)=>o.again[type]?waBlock(o,type,false):`<div class="sent"><span>${text}</span><button data-again="${type}">Send again</button></div>`;
@@ -463,7 +469,6 @@ function openOrder(no){
     if(o.status==="new")html+=waBlock(o,"list",true);
     else html+=sentLine(o,"list","List of clothes sent.");
     // 2. clothes ready, with bill
-    if(o.billed&&["ready","told","picked"].includes(o.status))html+=`<button class="btn btn-ghost" id="pdf">Share invoice PDF</button><p class="hint">Opens your phone's share menu. Pick WhatsApp, then the customer.</p><div id="pdfprev"></div>`;
     if(o.status==="ready")html+=o.billed?waBlock(o,"ready",true):`<p class="bad">Clothes are packed and ready. Save the bill below first so the message can include it.</p>`;
     if(o.status==="told"||(o.status==="picked"&&o.billed))html+=sentLine(o,"ready","Ready message and invoice sent.");
     // 3. bill
@@ -539,77 +544,10 @@ function openOrder(no){
     lockPrices(o);o.billed=true;toast("Bill saved");again();};
   const pp=$("#pp");if(pp)pp.onclick=()=>{const v=num($("#pay").value);if(!v){toast("Type the amount received");return;}
     o.paid=o.billed?Math.min(calc(o).total,o.paid+v):o.paid+v;toast(o.billed&&owed(o)?`Recorded. ${naira(owed(o))} still to pay.`:o.billed?"Fully paid":`Recorded ${naira(o.paid)} paid early`);again();};
-  const pdfb=$("#pdf");if(pdfb)pdfb.onclick=()=>shareInvoice(o,pdfb);
   const w=$("#washed");if(w)w.onclick=()=>{o.checking=true;again();};
   sh.querySelectorAll("[data-ck]").forEach(b=>b.onchange=()=>{o.checked[b.dataset.ck]=b.checked;again();});
   const rd=$("#rd");if(rd)rd.onclick=()=>{o.status="ready";toast(own?"Marked ready. Send the ready message.":"Marked ready. The owner has been told.");again();};
   const pk=$("#pick");if(pk)pk.onclick=()=>{o.status="picked";toast(owed(o)?"Picked up. Not fully paid yet.":"Picked up");again();};
-}
-
-/* ---------- Invoice PDF ---------- */
-async function invoiceCanvas(o){
-  const c=cust(o.phone),k=calc(o),W=1240,H=1754,cv=document.createElement("canvas");cv.width=W;cv.height=H;
-  const x=cv.getContext("2d"),F='"IBM Plex Sans","Segoe UI",sans-serif',G="#0F7B5F",INK="#03191E",MU="#55605F",LN="#DFE4E1";
-  try{await document.fonts.load('700 30px "IBM Plex Sans"');await document.fonts.load('400 30px "IBM Plex Sans"');}catch(_){}
-  const t=(s,px,y,{w=400,c=INK,a="left",px0=90}={})=>{x.font=`${w} ${px}px ${F}`;x.fillStyle=c;x.textAlign=a;x.fillText(s,a==="right"?W-90:px0,y);};
-  const fit=(s,max,px,w=400)=>{x.font=`${w} ${px}px ${F}`;if(x.measureText(s).width<=max)return s;while(s.length&&x.measureText(s+"…").width>max)s=s.slice(0,-1);return s+"…";};
-  x.fillStyle="#FFFFFF";x.fillRect(0,0,W,H);
-  x.fillStyle=G;x.fillRect(0,0,W,14);
-  t(fit(shop(),700,52,700),52,140,{w:700});
-  t(BRANCHES[o.branch],26,184,{c:MU});
-  t("INVOICE",44,140,{w:700,c:G,a:"right"});
-  t(`INV-${o.no}`,28,184,{w:600,a:"right"});
-  t(day(0),26,222,{c:MU,a:"right"});
-  x.fillStyle=LN;x.fillRect(90,262,W-180,2);
-  t("BILL TO",22,318,{w:700,c:MU});
-  t(fit(c.name,600,34,700),34,364,{w:700});
-  t(`Mark ${c.mark}  ·  ${fmtPhone(c.phone)}`,26,404,{c:MU});
-  t("ORDER",22,318,{w:700,c:MU,a:"right"});
-  t(`#${o.no}  ·  ${k.count} items`,28,364,{w:600,a:"right"});
-  t(`Dropped ${o.dropped}`,26,404,{c:MU,a:"right"});
-  let y=490;x.fillStyle="#F3F5F3";x.fillRect(90,y-44,W-180,64);
-  t("ITEM",22,y,{w:700,c:MU,px0:110});t("SERVICE",22,y,{w:700,c:MU,px0:560});t("QTY",22,y,{w:700,c:MU,px0:820});t("AMOUNT",22,y,{w:700,c:MU,a:"right"});
-  y+=70;
-  o.items.forEach((it,i)=>{const amt=unitPrice(o,it,i)*it.qty;
-    t(fit(pname(it),430,28,600),28,y,{w:600,px0:110});t(SERVICES[it.svc],26,y,{c:MU,px0:560});t(String(it.qty),28,y,{px0:830});t(naira(amt),28,y-0,{a:"right",w:600});
-    x.fillStyle=LN;x.fillRect(90,y+24,W-180,1);y+=64;});
-  const line=(l,v,opt={})=>{t(l,opt.big?32:26,y,{w:opt.big?700:400,c:opt.c||INK,px0:700});t(v,opt.big?34:26,y,{w:opt.big?700:600,c:opt.c||INK,a:"right"});y+=opt.big?56:46;};
-  y+=20;line("Subtotal",naira(k.sub));
-  if(k.exp)line("Express delivery",naira(k.exp));
-  if(o.delivery)line("Pickup / delivery",naira(o.delivery));
-  if(o.discount)line("Discount","-"+naira(o.discount));
-  x.fillStyle=INK;x.fillRect(700,y-30,W-790,2);y+=14;
-  line("Total",naira(k.total),{big:true});
-  if(o.paid)line("Paid",naira(o.paid));
-  line(owed(o)?"Balance to pay":"Fully paid",naira(owed(o)),{big:true,c:owed(o)?"#B42318":G});
-  y+=30;
-  if(owed(o)&&hasBank()){x.fillStyle="#DDF3EA";x.beginPath();x.roundRect?x.roundRect(90,y,W-180,220,18):x.rect(90,y,W-180,220);x.fill();
-    t("PAY BY TRANSFER",22,y+52,{w:700,c:"#0B4F3D",px0:130});
-    t(settings.bankName.trim(),30,y+100,{w:600,c:"#0B4F3D",px0:130});
-    t(settings.acctNo.replace(/(\d{3})(\d{3})(\d{4})/,"$1 $2 $3"),44,y+156,{w:700,c:"#0B4F3D",px0:130});
-    t(fit(settings.acctName.trim(),W-300,28,600),28,y+198,{w:600,c:"#0B4F3D",px0:130});
-    t("Send your receipt on WhatsApp",22,y+52,{c:"#0B4F3D",a:"right"});y+=260;}
-  t("Thank you for your patronage.",26,H-150,{c:MU});
-  x.fillStyle=LN;x.fillRect(90,H-118,W-180,1);
-  t("Made with Tagbook by Ordiventa",20,H-78,{c:MU});
-  return cv;
-}
-async function shareInvoice(o,btn){
-  btn.disabled=true;const old=btn.textContent;btn.textContent="Making invoice…";
-  try{
-    const cv=await invoiceCanvas(o);const img=cv.toDataURL("image/jpeg",0.92);
-    const prev=$("#pdfprev");if(prev)prev.innerHTML=`<p class="wa-label">Invoice preview</p><img src="${img}" alt="Invoice INV-${o.no}" style="width:100%;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:#fff">`;
-    if(!window.jspdf){toast("PDF tool did not load. Check your internet.");return;}
-    const pdf=new window.jspdf.jsPDF({unit:"pt",format:"a4"});pdf.addImage(img,"JPEG",0,0,595.28,841.89);
-    const name=`INV-${o.no}-${cust(o.phone).name.split(" ")[0]}.pdf`;
-    const file=new File([pdf.output("blob")],name,{type:"application/pdf"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:`Invoice INV-${o.no}`});toast("Invoice shared");}catch(e){if(e&&e.name!=="AbortError")toast("Could not open the share menu");}
-    }else{
-      const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
-      toast("Invoice downloaded. Attach it in WhatsApp.");
-    }
-  }finally{btn.disabled=false;btn.textContent=old;}
 }
 
 /* ---------- Settings (owner) ---------- */
@@ -644,18 +582,18 @@ function renderSettings(){
       <p class="hint" id="evx">${exampleExpress()}</p>
     </div>
     <h2 style="margin-top:18px">Price list</h2>
-    <p class="hint" style="margin-top:-6px">Tap a price to change it. New prices apply to new bills; bills already saved keep their prices.</p>
-    <div class="lines" style="padding:4px 14px">
-      <div class="price-row head"><span>Item</span><span>Wash & iron (₦)</span><span>Dry clean (₦)</span><span></span></div>
-      ${PRICES.filter(p=>!p.custom&&!p.hidden).map(p=>`<div class="price-row"><input data-pn="${p.id}" value="${esc(p.name)}" aria-label="Item name" autocomplete="off"><input data-pw="${p.id}" ${moneyAttrs} value="${p.wash}" aria-label="${esc(p.name)} wash and iron price"><input data-pd="${p.id}" ${moneyAttrs} value="${p.dry}" aria-label="${esc(p.name)} dry clean price"><button class="x" data-prm="${p.id}" aria-label="Remove ${esc(p.name)}">×</button></div>`).join("")}
-    </div>
+    <p class="hint" style="margin-top:-6px">Tap any name or price to change it. Leave a price empty if the shop does not offer that service for the item. New prices apply to new bills; saved bills keep their prices.</p>
+    ${PRICES.filter(p=>!p.custom&&!p.hidden).map(p=>`<div class="check pitem">
+      <div class="row" style="align-items:flex-end"><div><label for="pn-${p.id}" style="margin-top:0">Item name</label><input id="pn-${p.id}" data-pn="${p.id}" value="${esc(p.name)}" autocomplete="off"></div><button class="x" data-prm="${p.id}" aria-label="Remove ${esc(p.name)}">Remove</button></div>
+      <div class="pgrid">${Object.entries(SERVICES).map(([k,l])=>`<div><label for="pp-${p.id}-${k}">${l} (₦)</label><input id="pp-${p.id}-${k}" data-pp="${p.id}" data-k="${k}" ${moneyAttrs} value="${p.p[k]!=null?p.p[k]:""}" placeholder="Not offered"></div>`).join("")}</div>
+    </div>`).join("")}
     <div class="check">
       <p><b>Add an item</b></p>
       <label for="ni" style="margin-top:0">Item name</label><input id="ni" placeholder="e.g. Curtain (per panel)" autocomplete="off">
-      <div class="row"><div><label for="nw">Wash & iron (₦)</label><input id="nw" ${moneyAttrs} placeholder="0"></div><div><label for="nd">Dry clean (₦)</label><input id="nd" ${moneyAttrs} placeholder="0"></div></div>
+      <div class="pgrid">${Object.entries(SERVICES).map(([k,l])=>`<div><label for="na-${k}">${l} (₦)</label><input id="na-${k}" data-na="${k}" ${moneyAttrs} placeholder="Not offered"></div>`).join("")}</div>
       <button class="btn btn-primary" id="nadd">Add to price list</button>
     </div>
-    <p class="hint">Iron only is about 60% of wash and iron. Special items, like a wedding gown, get their price when you make the bill.</p>
+    <p class="hint">Special items, like a wedding gown, get their price when you make the bill.</p>
     <button class="btn btn-ghost" id="rst" style="margin-top:20px">Reset demo to sample data</button>
     <p class="foot">Sample prices for demo only. Demo changes are saved on this device only.</p>`;
   wireBack(view);
@@ -667,13 +605,13 @@ function renderSettings(){
   moneyInput($("#an"),()=>{const el=$("#an");if(el.value.length>10)el.value=el.value.slice(0,10);settings.acctNo=el.value;save();$("#anx").textContent=settings.acctNo.length===10?"":"Account number must be 10 digits.";});
   view.querySelectorAll("[data-et]").forEach(b=>b.onclick=()=>{settings.expressType=b.dataset.et;settings.expressValue=b.dataset.et==="percent"?50:1000;renderSettings();});
   view.querySelectorAll("[data-pn]").forEach(i=>i.oninput=()=>{const p=PRICES.find(x=>x.id===i.dataset.pn);p.name=i.value.slice(0,40)||p.name;save();});
-  view.querySelectorAll("[data-pw]").forEach(i=>moneyInput(i,v=>{PRICES.find(x=>x.id===i.dataset.pw).wash=v;save();}));
-  view.querySelectorAll("[data-pd]").forEach(i=>moneyInput(i,v=>{PRICES.find(x=>x.id===i.dataset.pd).dry=v;save();}));
-  view.querySelectorAll("[data-prm]").forEach(b=>b.onclick=()=>{if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Sure?";b.style.width="auto";return;}PRICES.find(x=>x.id===b.dataset.prm).hidden=true;save();toast("Item removed from the price list");renderSettings();});
-  moneyInput($("#nw"),()=>{});moneyInput($("#nd"),()=>{});
+  view.querySelectorAll("[data-pp]").forEach(i=>moneyInput(i,v=>{PRICES.find(x=>x.id===i.dataset.pp).p[i.dataset.k]=i.value===""?null:v;save();}));
+  view.querySelectorAll("[data-prm]").forEach(b=>b.onclick=()=>{if(!b.dataset.sure){b.dataset.sure="1";b.textContent="Tap again to remove";return;}PRICES.find(x=>x.id===b.dataset.prm).hidden=true;save();toast("Item removed from the price list");renderSettings();});
+  view.querySelectorAll("[data-na]").forEach(i=>moneyInput(i,()=>{}));
   $("#nadd").onclick=()=>{const n=$("#ni").value.trim();if(!n){toast("Type the item name first");$("#ni").focus();return;}
-    const w=num($("#nw").value),dr=num($("#nd").value);if(!w&&!dr){toast("Set at least one price");return;}
-    const id="i"+Date.now().toString(36);const sp=PRICES.findIndex(p=>p.custom);PRICES.splice(sp<0?PRICES.length:sp,0,{id,name:n.slice(0,40),wash:w,dry:dr});save();toast(`${n} added`);renderSettings();};
+    const pr={};let any=false;view.querySelectorAll("[data-na]").forEach(i=>{pr[i.dataset.na]=i.value===""?null:num(i.value);if(i.value!=="")any=true;});
+    if(!any){toast("Set a price for at least one service");return;}
+    const id="i"+Date.now().toString(36);const sp=PRICES.findIndex(p=>p.custom);PRICES.splice(sp<0?PRICES.length:sp,0,{id,name:n.slice(0,40),p:pr});save();toast(`${n} added`);renderSettings();};
   moneyInput($("#ev"),v=>{settings.expressValue=settings.expressType==="percent"?Math.min(v,300):v;$("#evx").textContent=exampleExpress();save();});
 }
 function exampleExpress(){return `Example: a ${naira(5000)} order marked express delivery costs ${naira(5000+expressFor(5000))}.`;}
