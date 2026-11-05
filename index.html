@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tagbook">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<script>window.TB_BUILD="20261105220434";</script>
+<script>window.TB_BUILD="20261105232704";</script>
 <title>Tagbook Demo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -195,7 +195,7 @@ let PRICES=[
   {id:"duvet",name:"Duvet",p:{wi:null,wo:3000,io:null,wsi:null}},
   {id:"special",name:"Special item",custom:true},
 ];
-const settings={shopName:"BrightWash Dry Cleaners",expressType:"percent",expressValue:50,bankName:"GTBank",acctNo:"0123456789",acctName:"BrightWash Dry Cleaners",theme:"light"};
+const settings={shopName:"BrightWash Laundry",expressType:"percent",expressValue:50,bankName:"GTBank",acctNo:"0123456789",acctName:"BrightWash Laundry",theme:"light"};
 const hasBank=()=>settings.bankName.trim()&&settings.acctNo.length===10&&settings.acctName.trim();
 const payTo=()=>hasBank()?`\n\nPay by transfer to:\n${settings.bankName.trim()}\n${settings.acctNo}\n${settings.acctName.trim()}\nPlease send your payment receipt here.`:"";
 const STEPS=[["new","Logged"],["listed","List sent"],["ready","Ready"],["told","Told"],["picked","Picked up"]];
@@ -209,7 +209,7 @@ const digits=v=>String(v).replace(/\D/g,"");
 const num=v=>+digits(v)||0;
 function moneyInput(el,fn){if(!el)return;el.addEventListener("input",()=>{const c=digits(el.value);if(el.value!==c)el.value=c;fn(num(c));});}
 const moneyAttrs='type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"';
-const shop=()=>settings.shopName.trim()||"Your dry cleaner";
+const shop=()=>settings.shopName.trim()||"Your laundry";
 
 let customers=[
   {phone:"08000000001",name:"Bolu Adeyemi",mark:"BO",sample:true},
@@ -251,7 +251,7 @@ const pname=it=>it.label||PRICES.find(x=>x.id===it.id).name;
 const expressLabel=()=>settings.expressType==="percent"?`+${settings.expressValue}%`:`+${naira(settings.expressValue)}`;
 
 /* demo only: keep changes on this device so closing the page doesn't reset them */
-const SAVE_KEY="tagbook-demo-v5";
+const SAVE_KEY="tagbook-demo-v6";
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({settings,customers,orders,nextNo,prices:PRICES}));}catch(_){}}
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
   if(s&&s.orders&&s.customers){Object.assign(settings,s.settings||{});customers=s.customers;orders=s.orders;nextNo=s.nextNo||nextNo;if(Array.isArray(s.prices))PRICES=s.prices;orders.forEach(o=>{if(o.billed&&!o.unit)lockPrices(o);});}}catch(_){}
@@ -660,8 +660,8 @@ function renderReports(){
 function renderSettings(){
   view.innerHTML=`${backBtn("Orders")}<h2>Settings</h2>
     <div class="check">
-      <label for="sn" style="margin-top:0">Dry cleaning business name</label>
-      <input id="sn" value="${esc(settings.shopName)}" placeholder="e.g. BrightWash Dry Cleaners" autocomplete="off">
+      <label for="sn" style="margin-top:0">Business name</label>
+      <input id="sn" value="${esc(settings.shopName)}" placeholder="e.g. BrightWash Laundry" autocomplete="off">
       <p class="hint">This name appears at the top of the app and in every WhatsApp message.</p>
     </div>
     <div class="check">
